@@ -100,9 +100,9 @@ public class StartFrame extends JFrame {
 
         JPanel row = new JPanel(new FlowLayout(FlowLayout.CENTER, 28, 0));
         row.setOpaque(false);
-        Theme.Btn customer = roleButton("Customer", "Browse the menu and place your order", Theme.PRIMARY, Theme.SECONDARY);
-        Theme.Btn staff = roleButton("Staff / Barista", "Log in to manage incoming orders", Theme.SECONDARY, Theme.PRIMARY);
-        Theme.Btn admin = roleButton("Administrator", "Log in to manage the menu and sales", Theme.ESPRESSO, Theme.MOCHA);
+        Theme.Btn customer = roleButton("Customer", Theme.PRIMARY, Theme.SECONDARY);
+        Theme.Btn staff = roleButton("Staff / Barista", Theme.SECONDARY, Theme.PRIMARY);
+        Theme.Btn admin = roleButton("Administrator", Theme.ESPRESSO, Theme.MOCHA);
         row.add(customer);
         row.add(staff);
         row.add(admin);
@@ -122,10 +122,11 @@ public class StartFrame extends JFrame {
         return page;
     }
 
-    private Theme.Btn roleButton(String title, String desc, Color fill, Color hover) {
-        String html = "<html><div style='text-align:center;width:210px'><span style='font-size:22px'>" + title
-                + "</span><br><br><span style='font-size:13px;font-weight:normal'>" + desc + "</span></div></html>";
-        Theme.Btn b = new Theme.Btn(html, fill, hover, Color.WHITE, false);
+    private Theme.Btn roleButton(String title, Color fill, Color hover) {
+        Theme.Btn b = new Theme.Btn(title, fill, hover, Color.WHITE, false);
+        b.setFont(Theme.font(Font.BOLD, 28));
+        b.setHorizontalAlignment(SwingConstants.CENTER);
+        b.setVerticalAlignment(SwingConstants.CENTER);
         b.setPreferredSize(new Dimension(290, 190));
         return b;
     }
