@@ -9,16 +9,18 @@ public class Receipt {
     public Receipt(Order order) { this.order = order; }
 
     public String generateReceipt() {
+        // Paid orders (seen by the administrator) say "Paid"; a fresh order still says to pay at the counter
+        String status = order.getPayment().isConfirmed() ? "Paid" : "Unpaid - pay at the counter";
         return build(order.numberText(), order.getOrderDate(), order.getItems(), order.getPayment().getMethod(),
-                order.getTotalAmount(), true);
+                order.getTotalAmount(), status);
     }
 
     /** Preview shown before the customer confirms the order (no order number yet). */
     public static String preview(List<OrderItem> items, String method, double total) {
-        return build("(given after you confirm)", LocalDateTime.now(), items, method, total, false);
+        return build("(given after you confirm)", LocalDateTime.now(), items, method, total, "Not yet placed");
     }
 
-    private static String build(String no, LocalDateTime dt, List<OrderItem> items, String method, double total, boolean placed) {
+    private static String build(String no, LocalDateTime dt, List<OrderItem> items, String method, double total, String status) {
         StringBuilder sb = new StringBuilder();
         String line = "-".repeat(W);
         sb.append(center("SipSync Cafe")).append('\n');
@@ -35,7 +37,7 @@ public class Receipt {
         sb.append(line).append('\n');
         sb.append(row("TOTAL", Theme.peso(total))).append('\n').append(line).append('\n');
         sb.append("Payment  : ").append(method == null ? "(choose a method)" : method).append('\n');
-        sb.append("Status   : ").append(placed ? "Unpaid - pay at the counter" : "Not yet placed").append('\n');
+        sb.append("Status   : ").append(status).append('\n');
         return sb.toString();
     }
 

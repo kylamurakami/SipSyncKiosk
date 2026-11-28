@@ -12,14 +12,21 @@ public class Order {
     }
 
     private final int orderNumber;
-    private final LocalDateTime orderDate = LocalDateTime.now();
+    private final LocalDateTime orderDate;
     private Status status = Status.PENDING;
     private final List<OrderItem> items;
     private final Payment payment;
     private double totalAmount;
 
+    /** A new order placed right now. */
     public Order(int orderNumber, List<OrderItem> items, String paymentMethod) {
+        this(orderNumber, items, paymentMethod, LocalDateTime.now());
+    }
+
+    /** Used when orders are loaded back from the saved file (keeps the original date and time). */
+    public Order(int orderNumber, List<OrderItem> items, String paymentMethod, LocalDateTime orderDate) {
         this.orderNumber = orderNumber;
+        this.orderDate = orderDate;
         this.items = new ArrayList<>(items);
         this.totalAmount = calculateTotal();
         this.payment = new Payment(orderNumber, paymentMethod, totalAmount);

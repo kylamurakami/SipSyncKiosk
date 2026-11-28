@@ -2,11 +2,14 @@ import javax.swing.*;
 import javax.swing.border.*;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.io.File;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.List;
 
-/** Administrator screen: manage the menu (items, prices, availability) and view the daily sales summary. */
+/** Administrator screen: manage the menu (items, prices, availability), view the daily sales and the sales analytics. */
 public class AdminFrame extends JFrame {
     private final Administrator admin;
     private final CardLayout cards = new CardLayout();
@@ -27,9 +30,14 @@ public class AdminFrame extends JFrame {
             new String[]{"Order #", "Time", "Items", "Payment Method", "Total"}, 0) {
         @Override public boolean isCellEditable(int r, int c) { return false; }
     };
+    private final JTable salesTable = new JTable(salesModel);
+    private List<Order> salesRows = new ArrayList<>(); // same order as the rows in salesTable
     private final JLabel dateLbl = Theme.label("", Font.BOLD, 30, Theme.PRIMARY);
     private final JLabel ordersLbl = Theme.label("0", Font.BOLD, 30, Theme.PRIMARY);
     private final JLabel salesLbl = Theme.label("", Font.BOLD, 30, Theme.PRIMARY);
+
+    // analytics tab
+    private final SalesDashboard analytics = new SalesDashboard();
 
     public AdminFrame(Administrator admin) {
         this.admin = admin;
@@ -49,15 +57,18 @@ public class AdminFrame extends JFrame {
         ButtonGroup g = new ButtonGroup();
         Theme.Chip menuChip = new Theme.Chip("Manage Menu");
         Theme.Chip salesChip = new Theme.Chip("Daily Sales");
-        for (Theme.Chip c : new Theme.Chip[]{menuChip, salesChip}) { c.setFont(Theme.font(Font.BOLD, 17)); g.add(c); nav.add(c); }
+        Theme.Chip analyticsChip = new Theme.Chip("Sales Analytics");
+        for (Theme.Chip c : new Theme.Chip[]{menuChip, salesChip, analyticsChip}) { c.setFont(Theme.font(Font.BOLD, 17)); g.add(c); nav.add(c); }
         menuChip.setSelected(true);
         menuChip.addActionListener(e -> { cards.show(content, "menu"); refreshMenu(); });
         salesChip.addActionListener(e -> { cards.show(content, "sales"); refreshSales(); });
+        analyticsChip.addActionListener(e -> { cards.show(content, "analytics"); analytics.refresh(); });
         body.add(nav, BorderLayout.NORTH);
 
         content.setOpaque(false);
         content.add(menuPanel(), "menu");
         content.add(salesPanel(), "sales");
+        content.add(analytics, "analytics");
         body.add(content, BorderLayout.CENTER);
         add(body, BorderLayout.CENTER);
 
@@ -214,10 +225,20 @@ public class AdminFrame extends JFrame {
         stats.add(statCard("Total sales", salesLbl));
         p.add(stats, BorderLayout.NORTH);
 
-        JTable t = new JTable(salesModel);
-        Theme.styleTable(t);
-        p.add(Theme.scroll(t), BorderLayout.CENTER);
-        p.add(Theme.label("Only orders with confirmed payment are counted.", Font.ITALIC, 14, Theme.MOCHA), BorderLayout.SOUTH);
+        Theme.styleTable(salesTable);
+        salesTable.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        // click an order to open its receipt
+        salesTable.addMouseListener(new MouseAdapter() {
+            @Override public void mouseClicked(MouseEvent e) {
+                int r = salesTable.rowAtPoint(e.getPoint());
+                if (r >= 0 && r < salesRows.size()) {
+                    new ReceiptViewDialog(AdminFrame.this, salesRows.get(r)).setVisible(true);
+                }
+            }
+        });
+        p.add(Theme.scroll(salesTable), BorderLayout.CENTER);
+        p.add(Theme.label("Only orders with confirmed payment are counted. Click an order to see its receipt.",
+                Font.ITALIC, 14, Theme.MOCHA), BorderLayout.SOUTH);
         return p;
     }
 
@@ -235,9 +256,10 @@ public class AdminFrame extends JFrame {
         dateLbl.setText(s.getDate().format(DateTimeFormatter.ofPattern("MMM dd, yyyy")));
         ordersLbl.setText(String.valueOf(s.getTotalOrders()));
         salesLbl.setText(Theme.peso(s.getTotalSales()));
+        salesRows = new ArrayList<>(s.getCountedOrders());
         salesModel.setRowCount(0);
         DateTimeFormatter tf = DateTimeFormatter.ofPattern("hh:mm a");
-        for (Order o : s.getCountedOrders()) {
+        for (Order o : salesRows) {
             salesModel.addRow(new Object[]{o.numberText(), o.getOrderDate().format(tf), o.itemsSummary(),
                     o.getPayment().getMethod(), Theme.peso(o.getTotalAmount())});
         }

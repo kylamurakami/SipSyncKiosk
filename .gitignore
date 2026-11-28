@@ -1,3 +1,9 @@
 out/
 .idea/
 *.iml
+
+.idea/
+out/
+*.iml
+sipsync_orders.txt
+sipsync_orders.txt.tmp
